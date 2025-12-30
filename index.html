@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analiz ve Yoğunluk Takip Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --p-green: #15803d; 
+            --d-green: #064e3b; 
+            --l-green: #f0fdf4; 
+            --table-header: #15803d; 
+        }
+        body { 
+            background-color: var(--l-green); 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            scroll-behavior: smooth; 
+            color: #111827; 
+        }
+        /** Rapor Tablosu Özel CSS: Yeşil Başlık - Siyah Metin Kontrastı */
+        .report-table { width: 100%; border-collapse: separate; border-spacing: 0; border: 2px solid #000; }
+        .report-table th { background-color: var(--table-header); color: #ffffff; border: 1px solid #000; padding: 12px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900; }
+        .report-table td { border: 1px solid #e5e7eb; padding: 10px; color: #000000; font-weight: 700; text-align: center; font-size: 13px; background: #fff; }
+        .report-table tr:nth-child(even) td { background-color: #f8fafc; }
+        .report-table tr:hover td { background-color: #f0fdf4; }
+        
+        /** Manuel Giriş Kutusu Tasarımı */
+        .input-box { width: 70px; height: 50px; text-align: center; border: 3px solid #d1d5db; border-radius: 14px; font-weight: 900; font-size: 1.5rem; color: var(--p-green); outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #fff; }
+        .input-box:focus { border-color: var(--p-green); box-shadow: 0 0 0 5px rgba(21, 128, 61, 0.15); transform: translateY(-2px); }
+        .input-box::placeholder { color: #e5e7eb; }
+
+        /** Animasyonlar */
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--p-green); border-radius: 4px; }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body class="selection:bg-green-200">
+    <div id="root"></div>
+    <!-- Vite handles the transformation of index.tsx -->
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
