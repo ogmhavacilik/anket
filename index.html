@@ -105,7 +105,7 @@
         ];
 
         const INITIAL_DATA = {
-          welcomeText: "Uçuş Teknisyenleri İş Yoğunluğu Anketine Hoş Geldiniz.\n\nLütfen her bir kategori için ilgili hava aracına yönelik yoğunluk puanınızı 1 (En Düşük) ile 5 (En Yüksek) arasında giriniz.\n\nToplam puan 500 üzerinden değerlendirilecek ve ağırlıklı yüzdelik oranınız hesaplanacaktır.",
+          welcomeText: "Uçuş Teknisyenleri İş Yoğunluğu Anketine Hoş Geldiniz.\n\nLütfen her bir kategori için ilgili hava aracına yönelik yoğunluk puanınızı 0 (Yok/En Düşük) ile 5 (En Yüksek) arasında giriniz.\n\nToplam puan 500 üzerinden değerlendirilecek ve ağırlıklı yüzdelik oranınız hesaplanacaktır.",
           questions: INITIAL_QUESTIONS,
           personnel: ["Örnek Personel 1", "Örnek Personel 2"],
           responses: []
@@ -411,7 +411,7 @@
                           <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center justify-between gap-4 group">
                             <span className="text-gray-900 font-black text-lg group-hover:text-green-700 transition-colors">{item.label}</span>
                             <div className="flex items-center space-x-2">
-                              {[1, 2, 3, 4, 5].map(val => (
+                              {[0, 1, 2, 3, 4, 5].map(val => (
                                 <button
                                   key={val}
                                   type="button"
@@ -893,7 +893,7 @@
                   <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGZ0d3Rma3JncDZ6c2lxYnF6OGcwMGpwaTJ2YzdmYXdnNTFheG9naCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/1rrxPs1nb3IjwmbiXw/giphy.gif" alt="Yükleniyor..." className="w-56 h-56 md:w-72 md:h-72 object-contain scale-125" />
                 </div>
                 <div className="text-center space-y-2">
-                  <p className="text-green-700 font-black text-2xl md:text-3xl tracking-[0.3em] uppercase animate-pulse">Bekleniyor...</p>
+                  <p className="text-green-700 font-black text-2xl md:text-3xl tracking-[0.3em] uppercase animate-pulse">Senkronize Ediliyor...</p>
                   <p className="text-gray-400 text-xs font-bold uppercase tracking-widest opacity-60">Veriler Google E-Tablodan Çekiliyor</p>
                 </div>
               </div>
