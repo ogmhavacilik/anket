@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analiz ve Yoğunluk Takip Sistemi</title>
+    
+    <!-- Kütüphaneler -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         
@@ -36,21 +42,886 @@
         .custom-scroll::-webkit-scrollbar { width: 8px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: var(--p-green); border-radius: 4px; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "path": "https://esm.sh/path@^0.12.7",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
 </head>
 <body class="selection:bg-green-200">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- CONSTANTS.TS ---
+        const AIRCRAFTS = [
+          { label: "T-70", id_suffix: "t70" },
+          { label: "AT-802A", id_suffix: "at802a" },
+          { label: "BELL 429", id_suffix: "bell429" },
+          { label: "B-360", id_suffix: "b360" },
+          { label: "C-650", id_suffix: "c650" }
+        ];
+
+        const INITIAL_QUESTIONS = [
+          {
+            id: 1,
+            text: "Hava araçlarımızın bakımlarında uçuş teknisyenlerimizin iş yoğunluğu ağırlığı nedir?",
+            sections: [
+              { id: "1a", label: "a", title: "Periyodik Bakım", sectionWeight: 15, items: AIRCRAFTS.map(a => ({ id: `1a_${a.id_suffix}`, label: a.label })) },
+              { id: "1b", label: "b", title: "Günlük Bakım", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `1b_${a.id_suffix}`, label: a.label })) },
+              { id: "1c", label: "c", title: "Arızacılık Uygulamaları ve Sıklığı", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `1c_${a.id_suffix}`, label: a.label })) },
+              { id: "1ç", label: "ç", title: "TB Yayınlanma ve Uygulama Sıklığı", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `1ç_${a.id_suffix}`, label: a.label })) }
+            ]
+          },
+          {
+            id: 2,
+            text: "Personelin uçuş faaliyetlerinin hazırlık ve icrasına katılım yoğunluğu nedir?",
+            sections: [
+              { id: "2a", label: "a", title: "Yangın Söndürme Operasyonları", sectionWeight: 10, items: AIRCRAFTS.map(a => ({ id: `2a_${a.id_suffix}`, label: a.label })) },
+              { id: "2b", label: "b", title: "VIP Komuta Kontrol Uçuşları", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `2b_${a.id_suffix}`, label: a.label })) },
+              { id: "2c", label: "c", title: "Bilfiil Uçuşa Katılım Durumu", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `2c_${a.id_suffix}`, label: a.label })) },
+              { id: "2ç", label: "ç", title: "Uçuş Öncesi ve Sonrası Faaliyetler", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `2ç_${a.id_suffix}`, label: a.label })) }
+            ]
+          },
+          {
+            id: 3,
+            text: "Personelin ikamet ettiği yeri dışında görev yapma yoğunluğu nedir?",
+            sections: [
+              { id: "3a", label: "a", title: "Yaz Dönemi", sectionWeight: 15, items: AIRCRAFTS.map(a => ({ id: `3a_${a.id_suffix}`, label: a.label })) },
+              { id: "3b", label: "b", title: "Kış Dönemi", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `3b_${a.id_suffix}`, label: a.label })) }
+            ]
+          },
+          {
+            id: 4,
+            text: "Personelin uçuşa hazır bekleme faaliyetlerinin yoğunluğu nedir?",
+            sections: [
+              { id: "4a", label: "a", title: "Bekleme Faaliyetleri", sectionWeight: 10, items: AIRCRAFTS.map(a => ({ id: `4a_${a.id_suffix}`, label: a.label })) }
+            ]
+          },
+          {
+            id: 5,
+            text: "Personelin idari faaliyet yoğunluğu nedir?",
+            sections: [
+              { id: "5a", label: "a", title: "İkmal Faaliyetleri ve Destek Teçhizatı Bakımı", sectionWeight: 8, items: AIRCRAFTS.map(a => ({ id: `5a_${a.id_suffix}`, label: a.label })) },
+              { id: "5b", label: "b", title: "Sicil Takip ve Planlama", sectionWeight: 7, items: AIRCRAFTS.map(a => ({ id: `5b_${a.id_suffix}`, label: a.label })) }
+            ]
+          }
+        ];
+
+        const INITIAL_DATA = {
+          welcomeText: "Uçuş Teknisyenleri İş Yoğunluğu Anketine Hoş Geldiniz.\n\nLütfen her bir kategori için ilgili hava aracına yönelik yoğunluk puanınızı 1 (En Düşük) ile 5 (En Yüksek) arasında giriniz.\n\nToplam puan 500 üzerinden değerlendirilecek ve ağırlıklı yüzdelik oranınız hesaplanacaktır.",
+          questions: INITIAL_QUESTIONS,
+          personnel: ["Örnek Personel 1", "Örnek Personel 2"],
+          responses: []
+        };
+
+        const ADMIN_PASSWORD = "1839";
+
+        // --- KOMUT.JS ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaD2pCO5hy1TW0E4-iWdfkICMIcRmCtlOsL6dHmvnvYY2VwPnGtYqfXaHnV1G6R9R_/exec";
+
+        const CloudService = {
+          async fetchData() {
+            if (!SCRIPT_URL || SCRIPT_URL.includes("YOUR_SCRIPT_URL")) return null;
+            try {
+              const response = await fetch(SCRIPT_URL);
+              if (!response.ok) throw new Error("Ağ yanıtı uygun değil");
+              return await response.json();
+            } catch (error) {
+              console.error("Veri çekme hatası:", error);
+              return null;
+            }
+          },
+          async saveResponse(responseData) {
+            return this.post({ action: "addResponse", data: responseData });
+          },
+          async updatePersonnel(personnelList) {
+            return this.post({ action: "updatePersonnel", data: personnelList });
+          },
+          async updateConfig(welcomeText) {
+            return this.post({ action: "updateConfig", data: { welcomeText } });
+          },
+          async updateWeights(weights) {
+            return this.post({ action: "updateWeights", data: weights });
+          },
+          async post(payload) {
+            if (!SCRIPT_URL || SCRIPT_URL.includes("YOUR_SCRIPT_URL")) return;
+            try {
+              await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+            } catch (error) {
+              console.error("Veri gönderme hatası:", error);
+            }
+          }
+        };
+
+        // --- COMPONENTS ---
+
+        const WelcomeView = ({ text, onStart }) => (
+          <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-green-600 text-center animate-fadeIn">
+            <i className="fas fa-info-circle text-green-600 text-5xl mb-4"></i>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Bilgilendirme</h2>
+            <div className="prose max-w-none text-gray-600 mb-8 whitespace-pre-wrap">
+              {text}
+            </div>
+            <button
+              onClick={onStart}
+              className="bg-green-600 text-white px-10 py-3 rounded-full font-bold text-lg hover:bg-green-700 transition-all shadow-md transform hover:scale-105"
+            >
+              Başla
+            </button>
+          </div>
+        );
+
+        const SurveyCompleted = () => (
+          <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-gray-100 text-center animate-fadeIn mt-10">
+            <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+              <i className="fas fa-check-circle text-5xl"></i>
+            </div>
+            <h2 className="text-3xl font-black text-gray-900 mb-4 uppercase tracking-tighter">Anket Tamamlanmıştır</h2>
+            <p className="text-xl font-bold text-green-700 mb-8">Sayfayı kapatabilirsiniz.</p>
+            <div className="pt-8 border-t border-gray-50 text-gray-400 text-sm font-bold uppercase tracking-widest">
+              Katılımınız İçin Teşekkür Ederiz
+            </div>
+          </div>
+        );
+
+        const AdminLogin = ({ onLoginSuccess, onCancel }) => {
+          const [password, setPassword] = useState('');
+          const [error, setError] = useState(false);
+
+          const handleSubmit = (e) => {
+            e.preventDefault();
+            if (password === ADMIN_PASSWORD) {
+              onLoginSuccess();
+            } else {
+              setError(true);
+              setPassword('');
+              setTimeout(() => setError(false), 2000);
+            }
+          };
+
+          return (
+            <div className="max-w-md mx-auto mt-20 animate-fadeIn">
+              <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 text-center">
+                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <i className="fas fa-lock text-3xl"></i>
+                </div>
+                <h2 className="text-2xl font-black text-gray-800 mb-2">Admin Girişi</h2>
+                <p className="text-gray-500 text-sm mb-8">Lütfen yönetim panelini açmak için şifreyi giriniz.</p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Şifre"
+                      className={`w-full p-4 border-2 rounded-2xl text-center text-2xl tracking-[1em] focus:ring-4 outline-none transition-all ${
+                        error ? 'border-red-500 bg-red-50 animate-pulse' : 'border-gray-100 focus:ring-green-100 focus:border-green-500'
+                      }`}
+                      autoFocus
+                    />
+                    {error && <p className="text-red-500 text-xs font-bold mt-2">Hatalı Şifre! Lütfen tekrar deneyin.</p>}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-green-700 transition-all shadow-lg active:scale-95"
+                  >
+                    Giriş Yap
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="text-gray-400 font-bold text-sm hover:text-gray-600 transition-colors"
+                  >
+                    İptal
+                  </button>
+                </form>
+              </div>
+            </div>
+          );
+        };
+
+        const SurveyForm = ({ questions, personnel, onSave, onCancel }) => {
+          const [step, setStep] = useState(0);
+          const [selectedPerson, setSelectedPerson] = useState('');
+          const [searchTerm, setSearchTerm] = useState('');
+          const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+          const [ratings, setRatings] = useState({});
+          const dropdownRef = useRef(null);
+
+          const handleRatingSelect = (itemId, value) => {
+            setRatings(prev => ({ ...prev, [itemId]: value }));
+          };
+
+          const isStepComplete = () => {
+            if (step === 0) return selectedPerson !== '';
+            const currentQuestion = questions[step - 1];
+            const itemIds = currentQuestion.sections.flatMap(s => s.items.map(i => i.id));
+            return itemIds.every(id => ratings[id] !== undefined);
+          };
+
+          const handleNext = () => {
+            if (isStepComplete()) {
+              if (step < questions.length) {
+                setStep(step + 1);
+                window.scrollTo(0, 0);
+              } else {
+                handleSubmit();
+              }
+            } else {
+              alert(step === 0 ? 'Lütfen personel seçiniz.' : 'Lütfen tüm alanları puanlayınız.');
+            }
+          };
+
+          const handleBack = () => {
+            if (step > 0) {
+              setStep(step - 1);
+              window.scrollTo(0, 0);
+            } else {
+              onCancel();
+            }
+          };
+
+          const handleSubmit = () => {
+            let totalScore = 0;
+            questions.forEach(q => {
+              q.sections.forEach(s => {
+                const sectionItems = s.items;
+                const sumRatings = sectionItems.reduce((sum, item) => sum + (ratings[item.id] || 0), 0);
+                const avgRating = sumRatings / sectionItems.length;
+                totalScore += avgRating * s.sectionWeight;
+              });
+            });
+
+            onSave({
+              id: crypto.randomUUID(),
+              timestamp: new Date().toLocaleString('tr-TR'),
+              personnelName: selectedPerson,
+              scores: ratings,
+              totalScore: Math.round(totalScore)
+            });
+          };
+
+          const filteredPersonnel = personnel.filter(p => 
+            p.toLowerCase().toLocaleLowerCase('tr-TR').includes(searchTerm.toLowerCase().toLocaleLowerCase('tr-TR'))
+          );
+
+          useEffect(() => {
+            const handleClickOutside = (event) => {
+              if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+              }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+          }, []);
+
+          const renderStep = () => {
+            if (step === 0) {
+              return (
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="bg-green-50 p-8 rounded-3xl border-2 border-green-200 shadow-inner">
+                    <h3 className="text-xl font-black text-green-800 mb-6 flex items-center uppercase tracking-tight">
+                      <i className="fas fa-id-card mr-3"></i> Personel Kimlik Girişi
+                    </h3>
+                    <label className="block text-sm font-bold text-gray-500 mb-3 uppercase tracking-widest">Ad Soyad Giriniz / Seçiniz:</label>
+                    
+                    <div className="relative" ref={dropdownRef}>
+                      <div className="relative">
+                        <input 
+                          type="text"
+                          value={selectedPerson || searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setSelectedPerson('');
+                            setIsDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsDropdownOpen(true)}
+                          placeholder="İsim yazmaya başlayın..."
+                          className="w-full p-5 border-2 border-green-300 rounded-2xl focus:ring-8 focus:ring-green-100 outline-none shadow-sm text-xl font-black text-green-900 transition-all bg-white"
+                        />
+                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-green-400">
+                          <i className={`fas ${isDropdownOpen ? 'fa-chevron-up' : 'fa-search'}`}></i>
+                        </div>
+                      </div>
+
+                      {isDropdownOpen && (searchTerm || filteredPersonnel.length > 0) && (
+                        <div className="absolute z-50 w-full mt-2 bg-white border-2 border-green-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-x-hidden">
+                          {filteredPersonnel.length > 0 ? (
+                            filteredPersonnel.map(p => (
+                              <div 
+                                key={p} 
+                                onClick={() => {
+                                  setSelectedPerson(p);
+                                  setSearchTerm('');
+                                  setIsDropdownOpen(false);
+                                }}
+                                className="p-4 hover:bg-green-50 cursor-pointer font-bold text-gray-700 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between group"
+                              >
+                                <span>{p}</span>
+                                <i className="fas fa-check text-green-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-4 text-gray-400 italic text-center">Eşleşen sonuç bulunamadı</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedPerson && (
+                      <div className="mt-4 p-4 bg-green-600 text-white rounded-2xl font-black flex items-center animate-fadeIn">
+                        <i className="fas fa-user-check mr-3"></i>
+                        Seçilen: {selectedPerson}
+                        <button 
+                          onClick={() => setSelectedPerson('')}
+                          className="ml-auto hover:text-red-200 transition-colors"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            const currentQuestion = questions[step - 1];
+            return (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="bg-green-800 text-white p-6 rounded-2xl shadow-xl border-b-4 border-green-900">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">BÖLÜM {step} / {questions.length}</div>
+                  <h3 className="text-xl md:text-2xl font-black leading-tight">{currentQuestion.text}</h3>
+                </div>
+
+                <div className="space-y-12">
+                  {currentQuestion.sections.map(section => (
+                    <div key={section.id} className="bg-gray-50/50 rounded-3xl p-6 border border-gray-100 space-y-6">
+                      <h4 className="text-lg font-black text-gray-800 flex items-center border-b-2 border-green-100 pb-3">
+                        <span className="bg-black text-white w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm font-mono uppercase shadow-lg">{section.label}</span>
+                        {section.title} 
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        {section.items.map(item => (
+                          <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center justify-between gap-4 group">
+                            <span className="text-gray-900 font-black text-lg group-hover:text-green-700 transition-colors">{item.label}</span>
+                            <div className="flex items-center space-x-2">
+                              {[1, 2, 3, 4, 5].map(val => (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => handleRatingSelect(item.id, val)}
+                                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl border-2 font-black transition-all flex items-center justify-center shadow-sm text-lg ${
+                                    ratings[item.id] === val 
+                                      ? 'bg-green-600 border-green-700 text-white scale-110 shadow-green-200' 
+                                      : 'bg-white border-gray-200 text-gray-300 hover:border-green-400 hover:text-green-500'
+                                  }`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <div className="bg-white p-6 md:p-12 rounded-[2.5rem] shadow-2xl border border-gray-100 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-3 bg-gray-100">
+                <div 
+                  className="h-full bg-green-600 transition-all duration-700 ease-in-out"
+                  style={{ width: `${(step / questions.length) * 100}%` }}
+                />
+              </div>
+
+              <div className="pt-6 mb-12 flex justify-between items-end border-b-2 border-gray-50 pb-6">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Anket Formu</h2>
+                  <p className="text-sm font-bold text-gray-400 mt-1">Yoğunluk puanınızı seçmek için ilgili rakama tıklayınız.</p>
+                </div>
+              </div>
+
+              <div className="min-h-[500px]">
+                {renderStep()}
+              </div>
+
+              <div className="mt-16 flex items-center justify-between pt-10 border-t-2 border-gray-100">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex items-center space-x-2 text-gray-400 font-black uppercase text-sm hover:text-red-500 transition-all px-6 py-4 rounded-2xl hover:bg-red-50"
+                >
+                  <i className="fas fa-arrow-left"></i>
+                  <span>{step === 0 ? 'İptal Et' : 'Geri Dön'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!isStepComplete()}
+                  className={`px-12 py-5 rounded-2xl font-black text-xl flex items-center space-x-4 transition-all transform shadow-2xl active:scale-95 ${
+                    isStepComplete() 
+                      ? 'bg-green-600 text-white hover:bg-green-700 hover:-translate-y-1' 
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span>{step === questions.length ? 'KAYDET VE BİTİR' : 'SONRAKİ ADIM'}</span>
+                  <i className={`fas ${step === questions.length ? 'fa-save' : 'fa-chevron-right'}`}></i>
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const AdminPanel = ({ data, updateData, onLogout }) => {
+          const [activeTab, setActiveTab] = useState('REPORTS');
+          const [personnelBulkText, setPersonnelBulkText] = useState('');
+
+          const AIRCRAFT_LIST = [
+            { label: "T-70", id_suffix: "t70" },
+            { label: "AT-802A", id_suffix: "at802a" },
+            { label: "BELL 429", id_suffix: "bell429" },
+            { label: "B-360", id_suffix: "b360" },
+            { label: "C-650", id_suffix: "c650" }
+          ];
+
+          const getRatingForAircraft = (res, sectionId, aircraftIdSuffix) => {
+            const itemId = `${sectionId}_${aircraftIdSuffix}`;
+            return res.scores[itemId] || 0;
+          };
+
+          const calculateAircraftWeightedScore = (res, aircraftIdSuffix) => {
+            let weightedSum = 0;
+            data.questions.forEach(q => {
+              q.sections.forEach(s => {
+                const rating = getRatingForAircraft(res, s.id, aircraftIdSuffix);
+                weightedSum += rating * s.sectionWeight;
+              });
+            });
+            return Math.round(weightedSum);
+          };
+
+          const globalMaxScore = useMemo(() => {
+            if (data.responses.length === 0) return 0;
+            let max = 0;
+            data.responses.forEach(res => {
+              AIRCRAFT_LIST.forEach(air => {
+                const score = calculateAircraftWeightedScore(res, air.id_suffix);
+                if (score > max) max = score;
+              });
+            });
+            return max;
+          }, [data.responses, data.questions]);
+
+          const handleSavePersonnel = () => {
+            const names = personnelBulkText.split('\n').map(n => n.trim()).filter(n => n !== '');
+            if (names.length === 0) return;
+            const combined = Array.from(new Set([...data.personnel, ...names]));
+            updateData({ personnel: combined });
+            setPersonnelBulkText('');
+            alert('Personel listesi güncellendi.');
+          };
+
+          const exportToExcel = () => {
+            let html = `
+              <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+              <head><meta charset="utf-8">
+              <style>
+                .header { background-color: #15803d; color: #ffffff; font-weight: bold; border: 1px solid #000000; text-align: center; }
+                .unit-header { background-color: #166534; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #000000; }
+                .cell { border: 1px solid #e2e8f0; text-align: left; color: #000000; }
+                .score-cell { font-weight: bold; text-align: center; color: #166534; border: 1px solid #e2e8f0; }
+              </style>
+              </head>
+              <body>
+              <table>
+                <thead>
+                  <tr>
+                    <th class="header">HAVA ARACI</th>
+                    <th class="header">PERSONEL AD SOYAD</th>
+                    ${data.questions.flatMap(q => q.sections.map(s => `<th class="header">${q.id}${s.label} (${s.title})</th>`)).join('')}
+                    <th class="header">TOPLAM PUAN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${AIRCRAFT_LIST.map(air => `
+                    <tr><td colspan="${2 + data.questions.reduce((a, b) => a + b.sections.length, 0) + 1}" class="unit-header">${air.label} BİRİMİ KAYITLARI</td></tr>
+                    ${data.responses.map(res => `
+                      <tr>
+                        <td class="cell">${air.label}</td>
+                        <td class="cell">${res.personnelName}</td>
+                        ${data.questions.flatMap(q => q.sections.map(s => {
+                          const rating = getRatingForAircraft(res, s.id, air.id_suffix);
+                          return `<td class="score-cell">${rating * s.sectionWeight}</td>`;
+                        })).join('')}
+                        <td class="score-cell">${calculateAircraftWeightedScore(res, air.id_suffix)}</td>
+                      </tr>
+                    `).join('')}
+                  `).join('')}
+                </tbody>
+              </table>
+              </body></html>
+            `;
+            const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Ayrintili_Rapor_Excel_${new Date().toLocaleDateString('tr-TR')}.xls`;
+            link.click();
+          };
+
+          const exportToWord = () => {
+            const dateStr = new Date().toLocaleDateString('tr-TR');
+            let htmlContent = `
+              <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+              <head><meta charset='utf-8'><title>Dinamik Yoğunluk Analizi Raporu</title>
+              <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; }
+                h1 { color: #15803d; text-align: center; border-bottom: 3px solid #15803d; padding-bottom: 10px; text-transform: uppercase; }
+                .info-text { background-color: #f0fdf4; border: 2px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 25px; color: #14532d; font-weight: bold; }
+                .referans-box { text-align: center; margin: 30px 0; padding: 20px; border: 2px dashed #15803d; background-color: #ffffff; }
+                .referans-val { font-size: 32px; color: #15803d; font-weight: 900; }
+                .unit-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                .unit-table th { background-color: #15803d; color: white; padding: 10px; border: 1px solid #166534; }
+                .unit-table td { padding: 10px; border: 1px solid #e2e8f0; text-align: center; }
+                .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+              </style>
+              </head>
+              <body>
+                <h1>DİNAMİK YOĞUNLUK ANALİZİ RAPORU</h1>
+                <p style='text-align: right;'><strong>Rapor Tarihi:</strong> ${dateStr}</p>
+                <div class="info-text">Yüzdelik oranlamalar, kurum içi en yüksek skor baz alınarak yapılmaktadır. Bu yöntem, en yoğun skor birime göre diğer birimlerin göreceli yükünü göstermektedir. Yoğunluk oranı en yüksek skorla yüzdelik hesaplanarak çıkarılmıştır.</div>
+                <div class="referans-box">
+                  <p style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #64748b;">Sistemdeki En Yüksek Skor (Referans)</p>
+                  <div class="referans-val">${globalMaxScore}</div>
+                </div>
+                <h2>BİRİM BAZLI YOĞUNLUK VERİLERİ</h2>
+                <table class="unit-table">
+                  <thead><tr><th>HAVA ARACI BİRİMİ</th><th>KATILIMCI SAYISI</th><th>ORTALAMA SKOR</th><th>YOĞUNLUK ORANI (%)</th></tr></thead>
+                  <tbody>
+                    ${AIRCRAFT_LIST.map(air => {
+                      const unitScores = data.responses.map(res => calculateAircraftWeightedScore(res, air.id_suffix));
+                      const totalParticipants = data.responses.length;
+                      const avgScore = totalParticipants > 0 ? unitScores.reduce((a, b) => a + b, 0) / totalParticipants : 0;
+                      const avgPct = globalMaxScore > 0 ? ((avgScore / globalMaxScore) * 100).toFixed(1) : "0.0";
+                      return `<tr><td style="text-align: left; font-weight: bold;">${air.label}</td><td>${totalParticipants} Kişi</td><td>${Math.round(avgScore)}</td><td style="color: #15803d; font-weight: bold;">%${avgPct}</td></tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+                <div class="footer">Bu rapor Kurumsal Anket Portalı üzerinden dinamik analiz verileri kullanılarak otomatik olarak üretilmiştir.</div>
+              </body></html>
+            `;
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Dinamik_Analiz_Raporu_${dateStr}.doc`;
+            link.click();
+          };
+
+          return (
+            <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200 animate-fadeIn">
+              <div className="bg-gradient-to-r from-green-900 to-green-700 p-8 text-white flex justify-between items-center">
+                <div>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter">Sistem Yönetim Paneli</h2>
+                  <p className="text-xs text-green-300 font-bold mt-1 opacity-70 tracking-widest uppercase">Gelişmiş Analiz Ve Birim Bazlı Raporlama</p>
+                </div>
+                <button onClick={onLogout} className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl text-sm font-black transition-all shadow-xl active:scale-95 uppercase">
+                  <i className="fas fa-sign-out-alt mr-2"></i> Çıkış
+                </button>
+              </div>
+
+              <div className="flex bg-gray-100 border-b overflow-x-auto scrollbar-hide p-1">
+                {[
+                  { id: 'REPORTS', icon: 'fa-file-excel', label: 'BİRİM BAZLI RAPOR' },
+                  { id: 'PERSONNEL', icon: 'fa-user-plus', label: 'PERSONEL YÖNETİMİ' },
+                  { id: 'QUESTIONS', icon: 'fa-sliders-h', label: 'KATSAYI AYARLARI' },
+                  { id: 'SETTINGS', icon: 'fa-edit', label: 'GİRİŞ METNİ' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 min-w-[170px] px-6 py-5 font-black text-xs flex items-center justify-center space-x-3 transition-all rounded-xl ${
+                      activeTab === tab.id 
+                        ? 'text-green-800 bg-white shadow-sm ring-1 ring-gray-200' 
+                        : 'text-gray-400 hover:text-green-600'
+                    }`}
+                  >
+                    <i className={`fas ${tab.icon}`}></i>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-8">
+                {activeTab === 'REPORTS' && (
+                  <div className="space-y-16 animate-fadeIn">
+                    <div className="space-y-6">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                        <div className="border-l-8 border-green-600 pl-4">
+                          <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Birim Bazlı Ayrıntılı Rapor</h3>
+                          <p className="text-sm font-bold text-gray-400 mt-1">Gördüğünüz renk ve düzende Excel indirmek için butona basınız.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                          <button onClick={exportToExcel} className="flex-1 md:flex-none bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-green-700 transition-all shadow-lg flex items-center justify-center space-x-2 uppercase">
+                            <i className="fas fa-file-excel"></i><span>Ayrıntılı Rapor Excel</span>
+                          </button>
+                          <button onClick={exportToWord} className="flex-1 md:flex-none bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center space-x-2 uppercase">
+                            <i className="fas fa-file-word"></i><span>Word Analiz İndir</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto border-2 border-gray-100 rounded-[1.5rem] shadow-xl">
+                        <table className="min-w-full text-xs text-left border-collapse bg-white">
+                          <thead>
+                            <tr className="bg-green-700 text-white font-black">
+                              <th className="px-6 py-6 border-r border-green-800 text-center bg-green-800 uppercase tracking-widest min-w-[120px]">HAVA ARACI</th>
+                              <th className="px-6 py-6 border-r border-green-800 uppercase tracking-widest text-center min-w-[200px]">PERSONEL AD SOYAD</th>
+                              {data.questions.flatMap(q => q.sections.map(s => (
+                                <th key={s.id} className="px-3 py-6 text-center border-r border-green-800 min-w-[80px]">{q.id}{s.label} <br/><span className="text-[8px] bg-green-900 px-1 rounded">W:{s.sectionWeight}</span></th>
+                              )))}
+                              <th className="px-6 py-6 text-center bg-green-900 border-r border-green-800 uppercase tracking-widest min-w-[120px]">TOPLAM PUAN</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 text-black">
+                            {data.responses.length === 0 ? (
+                              <tr><td colSpan={50} className="p-20 text-center text-gray-400 font-black italic tracking-widest bg-gray-50 uppercase">Henüz sisteme giriş yapılmadı</td></tr>
+                            ) : (
+                              AIRCRAFT_LIST.map((air) => (
+                                <React.Fragment key={air.id_suffix}>
+                                  <tr className="bg-green-600 border-y border-green-700 text-white">
+                                    <td colSpan={50} className="px-6 py-3 font-black uppercase tracking-[0.3em] text-[10px] text-center">{air.label} BİRİMİ KAYITLARI</td>
+                                  </tr>
+                                  {data.responses.map((res) => (
+                                    <tr key={`${air.id_suffix}_${res.id}`} className="hover:bg-green-50/50 transition-colors">
+                                      <td className="px-6 py-4 font-black text-gray-700 bg-gray-50 border-r border-gray-100 text-center uppercase tracking-tighter">{air.label}</td>
+                                      <td className="px-6 py-4 font-black text-gray-900 border-r border-gray-100">{res.personnelName}</td>
+                                      {data.questions.flatMap(q => q.sections.map(s => {
+                                        const rating = getRatingForAircraft(res, s.id, air.id_suffix);
+                                        return (
+                                          <td key={`${air.id_suffix}_${res.id}_${s.id}`} className="px-3 py-4 text-center border-r border-gray-100 font-bold text-black">
+                                            <div className="text-sm">{rating * s.sectionWeight}</div><div className="text-[8px] text-gray-400 font-normal italic">({rating}p)</div>
+                                          </td>
+                                        );
+                                      }))}
+                                      <td className="px-6 py-4 text-center font-black text-green-800 bg-green-50 border-r border-gray-100 text-sm">{calculateAircraftWeightedScore(res, air.id_suffix)}</td>
+                                    </tr>
+                                  ))}
+                                </React.Fragment>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-950 p-10 rounded-[2.5rem] shadow-2xl text-white border border-gray-800">
+                      <div className="space-y-12">
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-10">
+                          <div className="space-y-4 max-w-xl text-center md:text-left">
+                            <h3 className="text-2xl font-black flex items-center justify-center md:justify-start uppercase tracking-widest text-green-500"><i className="fas fa-chart-line mr-3"></i> Dinamik Yoğunluk Analizi</h3>
+                            <p className="text-gray-400 font-medium leading-relaxed italic">Yüzdelik oranlamalar, kurum içi en yüksek skor baz alınarak yapılmaktadır. Bu yöntem, en yoğun skor birime göre diğer birimlerin göreceli yükünü göstermektedir. Yoğunluk oranı en yüksek skorla yüzdelik hesaplanarak çıkarılmıştır.</p>
+                          </div>
+                          <div className="flex flex-col items-center bg-gray-900 p-8 rounded-3xl border-2 border-green-600/30 w-full md:w-auto min-w-[300px]">
+                            <span className="text-xs font-black text-green-500 uppercase tracking-[0.3em] mb-3">REFERANS SKOR</span><div className="text-7xl font-black drop-shadow-[0_0_20px_rgba(34,197,94,0.3)]">{globalMaxScore}</div><div className="text-[10px] text-gray-500 mt-4 font-bold uppercase tracking-widest">SİSTEMDEKİ EN YÜKSEK SKOR</div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {AIRCRAFT_LIST.map(air => {
+                            const unitScores = data.responses.map(res => calculateAircraftWeightedScore(res, air.id_suffix));
+                            const totalParticipants = data.responses.length;
+                            const avgScore = totalParticipants > 0 ? unitScores.reduce((a, b) => a + b, 0) / totalParticipants : 0;
+                            const avgPct = globalMaxScore > 0 ? ((avgScore / globalMaxScore) * 100).toFixed(1) : "0.0";
+                            return (
+                              <div key={air.id_suffix} className="bg-gray-900/50 p-6 rounded-3xl border border-gray-800 hover:border-green-600/50 transition-all group">
+                                <div className="flex justify-between items-start mb-4">
+                                  <div><div className="text-xl font-black text-white group-hover:text-green-400 transition-colors uppercase tracking-tighter">{air.label}</div><div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{totalParticipants} KİŞİ KATILDI</div></div>
+                                  <div className="text-right"><div className="text-2xl font-black text-green-500">%{avgPct}</div><div className="text-[10px] text-gray-500 font-black uppercase">YOĞUNLUK ORANI</div></div>
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase"><span>ORTALAMA SKOR</span><span className="text-white">{Math.round(avgScore)} / {globalMaxScore}</span></div>
+                                  <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-green-600 transition-all duration-1000" style={{ width: `${avgPct}%` }} /></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'PERSONNEL' && (
+                  <div className="space-y-8 animate-fadeIn">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                      <div className="space-y-6">
+                        <div className="border-l-8 border-green-600 pl-4"><h3 className="text-2xl font-black text-gray-900 uppercase">Personel Listesi Ekle</h3><p className="text-sm font-bold text-gray-400">İsimleri her satıra bir tane gelecek şekilde yapıştırın.</p></div>
+                        <textarea rows={10} placeholder="Ahmet Yılmaz..." value={personnelBulkText} onChange={(e) => setPersonnelBulkText(e.target.value)} className="w-full p-6 border-2 border-gray-100 rounded-3xl outline-none focus:ring-8 focus:ring-green-50 focus:border-green-600 font-sans shadow-inner text-lg font-bold" />
+                        <button onClick={handleSavePersonnel} className="w-full bg-green-600 text-white px-8 py-5 rounded-2xl font-black text-xl hover:bg-green-700 transition-all shadow-2xl uppercase">Kaydet</button>
+                      </div>
+                      <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-gray-200">
+                        <h3 className="text-xl font-black text-gray-800 mb-6 flex justify-between items-center border-b pb-4 uppercase"><span>Mevcut Liste</span><span className="bg-green-700 text-white px-4 py-1 rounded-lg text-xs font-mono">{data.personnel.length}</span></h3>
+                        <div className="max-h-[400px] overflow-y-auto space-y-3 pr-3">
+                          {data.personnel.map(p => (
+                            <div key={p} className="bg-white p-4 rounded-2xl border border-gray-100 text-sm font-black text-gray-700 flex justify-between items-center group shadow-sm">
+                              <span>{p}</span><button onClick={() => updateData({ personnel: data.personnel.filter(x => x !== p) })} className="text-red-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"><i className="fas fa-trash-alt"></i></button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'QUESTIONS' && (
+                  <div className="space-y-12 animate-fadeIn">
+                    <div className="border-l-8 border-green-600 pl-4"><h3 className="text-2xl font-black text-gray-900 uppercase">Ağırlık Ve Katsayı Ayarları</h3><p className="text-sm font-bold text-gray-400">Her bölümün toplam skordaki etkisini (Katsayı) buradan değiştirebilirsiniz.</p></div>
+                    {data.questions.map(q => (
+                      <div key={q.id} className="border-2 border-gray-100 rounded-[2rem] overflow-hidden shadow-lg bg-white">
+                        <div className="bg-green-800 text-white p-6 font-black text-lg flex justify-between items-center"><span>{q.id}. SORU KONFİGÜRASYONU</span><span className="bg-green-950 px-4 py-1 rounded-xl text-xs uppercase tracking-widest font-mono">TOPLAM: {q.sections.reduce((a,b)=>a+b.sectionWeight,0)}</span></div>
+                        <div className="p-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                          {q.sections.map(sec => (
+                            <div key={sec.id} className="bg-green-50 p-6 rounded-3xl border-2 border-green-100 text-center">
+                              <div className="text-[10px] font-black text-green-800 opacity-40 uppercase mb-4 tracking-widest">BÖLÜM: {sec.label}</div>
+                              <input type="number" value={sec.sectionWeight} onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  const updated = data.questions.map(currQ => currQ.id === q.id ? { ...currQ, sections: currQ.sections.map(currS => currS.id === sec.id ? { ...currS, sectionWeight: val } : currS) } : currQ);
+                                  updateData({ questions: updated });
+                                }} className="w-full text-center text-4xl font-black text-green-800 bg-transparent outline-none focus:scale-110 transition-transform" />
+                              <div className="text-[9px] text-gray-400 font-black uppercase mt-4 leading-tight">{sec.title}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'SETTINGS' && (
+                  <div className="space-y-8 animate-fadeIn">
+                    <div className="border-l-8 border-green-600 pl-4"><h3 className="text-2xl font-black text-gray-900 uppercase">Giriş Metni Ve Uyarılar</h3><p className="text-sm font-bold text-gray-400">Anket başlangıcında personelin göreceği bilgilendirme yazısı.</p></div>
+                    <textarea rows={15} value={data.welcomeText} onChange={(e) => updateData({ welcomeText: e.target.value })} className="w-full p-8 border-2 border-gray-100 rounded-[2.5rem] outline-none focus:ring-8 focus:ring-green-50 focus:border-green-600 shadow-inner font-bold text-gray-700 leading-relaxed text-lg" placeholder="Hoş geldiniz..." />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        const App = () => {
+          const [data, setData] = useState(() => {
+            const saved = localStorage.getItem('survey_app_data');
+            return saved ? JSON.parse(saved) : INITIAL_DATA;
+          });
+
+          const [view, setView] = useState('WELCOME');
+          const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+          const [isLoading, setIsLoading] = useState(true);
+
+          useEffect(() => {
+            const syncWithCloud = async () => {
+              const cloudData = await CloudService.fetchData();
+              if (cloudData) {
+                setData(prev => {
+                  const updated = { ...prev };
+                  if (cloudData.personnel) updated.personnel = cloudData.personnel;
+                  const welcomeConfig = cloudData.config?.find(c => c.Key === 'welcomeText');
+                  if (welcomeConfig) updated.welcomeText = welcomeConfig.Value;
+                  if (cloudData.responses) {
+                    updated.responses = cloudData.responses.map(r => ({
+                      id: r.ID, timestamp: r.Timestamp, personnelName: r.PersonnelName,
+                      totalScore: parseInt(r.TotalScore),
+                      scores: JSON.parse(r.ScoresJSON)
+                    }));
+                  }
+                  if (cloudData.weights && cloudData.weights.length > 0) {
+                    updated.questions = prev.questions.map(q => ({
+                      ...q,
+                      sections: q.sections.map(s => {
+                        const cloudW = cloudData.weights.find(w => w.SectionID === s.id);
+                        return cloudW ? { ...s, sectionWeight: parseInt(cloudW.Weight) } : s;
+                      })
+                    }));
+                  }
+                  return updated;
+                });
+              }
+              setTimeout(() => setIsLoading(false), 3000);
+            };
+            syncWithCloud();
+          }, []);
+
+          useEffect(() => {
+            localStorage.setItem('survey_app_data', JSON.stringify(data));
+          }, [data]);
+
+          const handleSaveResponse = async (response) => {
+            setData(prev => ({ ...prev, responses: [...prev.responses, response] }));
+            await CloudService.saveResponse(response);
+            setView('COMPLETED');
+          };
+
+          const updateAppData = async (newData) => {
+            setData(prev => {
+              const updated = { ...prev, ...newData };
+              if (newData.personnel) CloudService.updatePersonnel(newData.personnel);
+              if (newData.welcomeText) CloudService.updateConfig(newData.welcomeText);
+              if (newData.questions) {
+                const weights = newData.questions.flatMap(q => q.sections.map(s => ({ sectionId: s.id, weight: s.sectionWeight })));
+                CloudService.updateWeights(weights);
+              }
+              return updated;
+            });
+          };
+
+          if (isLoading) {
+            return (
+              <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[9999] animate-fadeIn">
+                <div className="relative w-64 h-64 md:w-80 md:h-80 bg-white rounded-full shadow-[0_0_100px_rgba(0,0,0,0.1)] border border-gray-50 flex items-center justify-center overflow-hidden mb-8 transform transition-transform duration-1000">
+                  <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGZ0d3Rma3JncDZ6c2lxYnF6OGcwMGpwaTJ2YzdmYXdnNTFheG9naCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/1rrxPs1nb3IjwmbiXw/giphy.gif" alt="Yükleniyor..." className="w-56 h-56 md:w-72 md:h-72 object-contain scale-125" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-green-700 font-black text-2xl md:text-3xl tracking-[0.3em] uppercase animate-pulse">Senkronize Ediliyor...</p>
+                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest opacity-60">Veriler Google E-Tablodan Çekiliyor</p>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-green-50 pb-10">
+              <nav className="bg-green-700 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-50">
+                <h1 className="text-xl font-bold flex items-center cursor-pointer" onClick={() => setView('WELCOME')}><i className="fas fa-poll-h mr-2"></i>Kurumsal Anket Portalı</h1>
+                <div className="space-x-4">
+                  <button onClick={() => setView('WELCOME')} className="hover:text-green-200 transition-colors font-medium">Ana Sayfa</button>
+                  <button onClick={() => isAdminAuthenticated ? setView('ADMIN') : setView('ADMIN_LOGIN')} className="bg-green-800 px-4 py-1.5 rounded-lg hover:bg-green-900 transition-colors font-bold shadow-sm">Admin Paneli</button>
+                </div>
+              </nav>
+              <main className="container mx-auto mt-8 px-4 max-w-4xl">
+                {view === 'WELCOME' && <WelcomeView text={data.welcomeText} onStart={() => setView('SURVEY')} />}
+                {view === 'SURVEY' && <SurveyForm questions={data.questions} personnel={data.personnel} onSave={handleSaveResponse} onCancel={() => setView('WELCOME')} />}
+                {view === 'ADMIN_LOGIN' && <AdminLogin onLoginSuccess={() => { setIsAdminAuthenticated(true); setView('ADMIN'); }} onCancel={() => setView('WELCOME')} />}
+                {view === 'ADMIN' && isAdminAuthenticated && <AdminPanel data={data} updateData={updateAppData} onLogout={() => { setIsAdminAuthenticated(false); setView('WELCOME'); }} />}
+                {view === 'COMPLETED' && <SurveyCompleted />}
+              </main>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
