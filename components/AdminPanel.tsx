@@ -58,6 +58,7 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
   };
 
   const exportToExcel = () => {
+    // Web sayfası görünümünü korumak için HTML tabanlı Excel oluşturma
     let html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head><meta charset="utf-8">
@@ -110,6 +111,7 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
 
   const exportToWord = () => {
     const dateStr = new Date().toLocaleDateString('tr-TR');
+    
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Dinamik Yoğunluk Analizi Raporu</title>
@@ -128,13 +130,16 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
       <body>
         <h1>DİNAMİK YOĞUNLUK ANALİZİ RAPORU</h1>
         <p style='text-align: right;'><strong>Rapor Tarihi:</strong> ${dateStr}</p>
+        
         <div class="info-text">
-          Yüzdelik oranlamalar, kurum içi en yüksek skor baz alınarak yapılmaktadır. Bu yöntem, en yoğun skor birime göre diğer birimlerin göreceli yükünü göstermektedir.
+          Yüzdelik oranlamalar, kurum içi en yüksek skor baz alınarak yapılmaktadır. Bu yöntem, en yoğun skor birime göre diğer birimlerin göreceli yükünü göstermektedir. Yoğunluk oranı en yüksek skorla yüzdelik hesaplanarak çıkarılmıştır.
         </div>
+
         <div class="referans-box">
-          <p>Sistemdeki En Yüksek Skor (Referans)</p>
+          <p style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #64748b;">Sistemdeki En Yüksek Skor (Referans)</p>
           <div class="referans-val">${globalMaxScore}</div>
         </div>
+
         <h2>BİRİM BAZLI YOĞUNLUK VERİLERİ</h2>
         <table class="unit-table">
           <thead>
@@ -162,7 +167,10 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
             }).join('')}
           </tbody>
         </table>
-        <div class="footer">Bu rapor otomatik olarak üretilmiştir.</div>
+
+        <div class="footer">
+          Bu rapor Kurumsal Anket Portalı üzerinden dinamik analiz verileri kullanılarak otomatik olarak üretilmiştir.
+        </div>
       </body>
       </html>
     `;
@@ -218,6 +226,7 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div className="border-l-8 border-green-600 pl-4">
                   <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Birim Bazlı Ayrıntılı Rapor</h3>
+                  <p className="text-sm font-bold text-gray-400 mt-1">Gördüğünüz renk ve düzende Excel indirmek için butona basınız.</p>
                 </div>
                 <div className="flex flex-wrap gap-3 w-full md:w-auto">
                   <button 
@@ -245,10 +254,8 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
                       <th className="px-6 py-6 border-r border-green-800 uppercase tracking-widest text-center min-w-[200px]">PERSONEL AD SOYAD</th>
                       {data.questions.flatMap(q => q.sections.map(s => (
                         <th key={s.id} className="px-3 py-6 text-center border-r border-green-800 min-w-[80px]">
-                          <div className="flex flex-col items-center">
-                            <span>{q.id}{s.label}</span>
-                            <span className="text-[8px] bg-green-900 px-1 rounded mt-1">W:{s.sectionWeight}</span>
-                          </div>
+                          {q.id}{s.label} <br/> 
+                          <span className="text-[8px] bg-green-900 px-1 rounded">W:{s.sectionWeight}</span>
                         </th>
                       )))}
                       <th className="px-6 py-6 text-center bg-green-900 border-r border-green-800 uppercase tracking-widest min-w-[120px]">TOPLAM PUAN</th>
@@ -294,6 +301,64 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
                 </table>
               </div>
             </div>
+
+            <div className="bg-gray-950 p-10 rounded-[2.5rem] shadow-2xl text-white border border-gray-800">
+              <div className="space-y-12">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-10">
+                  <div className="space-y-4 max-w-xl text-center md:text-left">
+                    <h3 className="text-2xl font-black flex items-center justify-center md:justify-start uppercase tracking-widest text-green-500">
+                      <i className="fas fa-chart-line mr-3"></i> Dinamik Yoğunluk Analizi
+                    </h3>
+                    <p className="text-gray-400 font-medium leading-relaxed italic">
+                      Yüzdelik oranlamalar, kurum içi en yüksek skor baz alınarak yapılmaktadır. Bu yöntem, en yoğun skor birime göre diğer birimlerin göreceli yükünü göstermektedir. Yoğunluk oranı en yüksek skorla yüzdelik hesaplanarak çıkarılmıştır.
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center bg-gray-900 p-8 rounded-3xl border-2 border-green-600/30 w-full md:w-auto min-w-[300px]">
+                    <span className="text-xs font-black text-green-500 uppercase tracking-[0.3em] mb-3">REFERANS SKOR</span>
+                    <div className="text-7xl font-black drop-shadow-[0_0_20px_rgba(34,197,94,0.3)]">{globalMaxScore}</div>
+                    <div className="text-[10px] text-gray-500 mt-4 font-bold uppercase tracking-widest">SİSTEMDEKİ EN YÜKSEK SKOR</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {AIRCRAFT_LIST.map(air => {
+                    const unitScores = data.responses.map(res => calculateAircraftWeightedScore(res, air.id_suffix));
+                    const totalParticipants = data.responses.length;
+                    const avgScore = totalParticipants > 0 
+                      ? unitScores.reduce((a, b) => a + b, 0) / totalParticipants 
+                      : 0;
+                    const avgPct = globalMaxScore > 0 ? ((avgScore / globalMaxScore) * 100).toFixed(1) : "0.0";
+
+                    return (
+                      <div key={air.id_suffix} className="bg-gray-900/50 p-6 rounded-3xl border border-gray-800 hover:border-green-600/50 transition-all group">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <div className="text-xl font-black text-white group-hover:text-green-400 transition-colors uppercase tracking-tighter">{air.label}</div>
+                            <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{totalParticipants} KİŞİ KATILDI</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-black text-green-500">%{avgPct}</div>
+                            <div className="text-[10px] text-gray-500 font-black uppercase">YOĞUNLUK ORANI</div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
+                            <span>ORTALAMA SKOR</span>
+                            <span className="text-white">{Math.round(avgScore)} / {globalMaxScore}</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-600 transition-all duration-1000"
+                              style={{ width: `${avgPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -336,6 +401,7 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
           <div className="space-y-12 animate-fadeIn">
             <div className="border-l-8 border-green-600 pl-4">
               <h3 className="text-2xl font-black text-gray-900 uppercase">Ağırlık Ve Katsayı Ayarları</h3>
+              <p className="text-sm font-bold text-gray-400">Her bölümün toplam skordaki etkisini (Katsayı) buradan değiştirebilirsiniz.</p>
             </div>
             {data.questions.map(q => (
               <div key={q.id} className="border-2 border-gray-100 rounded-[2rem] overflow-hidden shadow-lg bg-white">
@@ -372,6 +438,7 @@ const AdminPanel: React.FC<Props> = ({ data, updateData, onLogout }) => {
           <div className="space-y-8 animate-fadeIn">
             <div className="border-l-8 border-green-600 pl-4">
               <h3 className="text-2xl font-black text-gray-900 uppercase">Giriş Metni Ve Uyarılar</h3>
+              <p className="text-sm font-bold text-gray-400">Anket başlangıcında personelin göreceği bilgilendirme yazısı.</p>
             </div>
             <textarea 
               rows={15}

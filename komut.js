@@ -1,6 +1,5 @@
-
 /**
- * Google Apps Script Web App URL'niz.
+ * Google Apps Script Web App URL
  */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaD2pCO5hy1TW0E4-iWdfkICMIcRmCtlOsL6dHmvnvYY2VwPnGtYqfXaHnV1G6R9R_/exec";
 
@@ -9,9 +8,10 @@ export const CloudService = {
    * Tüm verileri Google E-Tablo'dan çeker.
    */
   async fetchData() {
-    if (SCRIPT_URL.includes("YOUR_SCRIPT_URL")) return null;
+    if (!SCRIPT_URL || SCRIPT_URL.includes("YOUR_SCRIPT_URL")) return null;
     try {
       const response = await fetch(SCRIPT_URL);
+      if (!response.ok) throw new Error("Ağ yanıtı uygun değil");
       return await response.json();
     } catch (error) {
       console.error("Veri çekme hatası:", error);
@@ -48,11 +48,11 @@ export const CloudService = {
   },
 
   async post(payload) {
-    if (SCRIPT_URL.includes("YOUR_SCRIPT_URL")) return;
+    if (!SCRIPT_URL || SCRIPT_URL.includes("YOUR_SCRIPT_URL")) return;
     try {
       await fetch(SCRIPT_URL, {
         method: "POST",
-        mode: "no-cors", 
+        mode: "no-cors", // Google Scripts için gerekli
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
